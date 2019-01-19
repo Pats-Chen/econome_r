@@ -1,0 +1,519 @@
+---
+title: "沐刃经济塾：R语言教程第二课"
+author:
+  - Jiazhe Chen
+  - Shi Liang
+date: "December 9, 2018"
+documentclass: ctexart
+output:
+  rticles::ctex:
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+classoption: "hyperref,"
+---
+
+\newpage
+
+# 课前练习
+
+1. 载入```` gpa_raw.csv ````数据集；
+2. 在数据框中为每一条数据添加新变量```` id ````，并依次赋值```` 1,2,3,... ````；
+3. 打开```` GPA_CODEBOOK.docx ````，找到高中GPA和大学GPA对应变量；
+4. 检查```` 3. ````要求的变量是否存在缺失值，并删除缺失值对应的数据条目；
+5. 将大学GPA对高中GPA进行OLS回归，并报告所有系数估计值，标准误，单个系数显著性以及系数联合显著性，并分别以```` ***,**,* ````表示（系数联合显著性以p值表示）;
+6. 怀疑逃课数量对大学GPA具有影响。根据```` GPA_CODEBOOK.docx ````，找到逃课数量对应变量；
+7. 检查```` 6. ````要求的变量是否存在缺失值及异常值，并删除缺失值及异常值对应的数据条目（经验法则：在变量样本均值```` +/- ````三个标准差区间外的可认为是异常值）；
+8. 计算大学GPA与逃课数量之间的相关系数，并报告p值；
+9. 将大学GPA对高中GPA及逃课数量进行OLS回归，报告逃课数量变量的系数估计值及单个系数显著性，并对系数的涵义进行解读；
+10. 怀疑是否住校对大学GPA具有影响。根据```` GPA_CODEBOOK.docx ````，找到是否住校对应变量；
+11. 检查```` 10. ````要求的变量是否存在缺失值及异常值，并删除缺失值及异常值对应的数据条目；
+12. 根据是否住校变量生成新的二值变量，若住校则变量取值为```` 1 ````，反之则取```` 0 ````，以便回归模型处理；
+13. 将大学GPA对高中GPA，逃课数量与是否住校进行OLS回归，报告是否住校变量的系数估计值及单个系数显著性，并对系数的涵义进行解读；
+14. 将大学GPA变量的数据变为百分制，并再次进行```` 13. ````，报告所有说明变量的系数估计值及单个系数显著性，并对系数的涵义进行解读；
+15. 怀疑父母教育水平可能影响子女大学GPA。根据```` GPA_CODEBOOK.docx ````，找到父母教育水平对应变量；
+16. 检查```` 15. ````要求的变量是否存在缺失值及异常值，并删除缺失值及异常值对应的数据条目；
+17. 根据父母教育水平变量生成新的二值变量，若父母中至少一人为大学毕业则变量取值为```` 1 ````，反之则取```` 0 ````，以便回归模型处理；
+18. 将大学GPA（百分制）对高中GPA，逃课数量，是否住校与父母教育水平进行OLS回归，报告父母教育水平变量的系数估计值及单个系数显著性，并对系数的涵义进行解读；
+19. 怀疑酗酒程度可能影响大学GPA。根据```` GPA_CODEBOOK.docx ````，找到酗酒程度对应变量；
+20. 检查```` 19. ````要求的变量是否存在缺失值及异常值，并删除缺失值及异常值对应的数据条目；
+21. 根据```` GPA_CODEBOOK.docx ````，找到酗酒程度变量中的“拒绝回答”者的```` id ````，并将对应的酗酒程度变量的取值修改为```` NA ````；
+22. 将大学GPA对高中GPA，逃课数量，是否住校，酗酒程度，父母教育水平进行OLS回归，报告酗酒程度变量的系数估计值及单个系数显著性，并对系数的涵义进行解读；
+23. 怀疑男女学生的成绩的影响因素不同。根据```` GPA_CODEBOOK.docx ````，找到性别对应变量；
+24. 根据性别变量生成新的二值变量，若为男性则变量取值为```` 1 ````，反之则取```` 0 ````；
+25. 根据```` 24. ````生成的新变量将数据集分成两组，并分别保存为```` gpa_male ````与```` gpa_female ````；
+26. 使用```` 25. ````生成的两组新的数据集分别进行```` 22. ````；
+27. 检验```` 26. ````中男性数据集的回归模型是否存在异方差问题，并报告BP检验的p值；
+28. 使用对异方差文件的标准误修正```` 26. ````中男性数据集的回归结果，并观察修正后的回归结果表现与```` 27. ````中的检验结果是否一致；
+
+# 初识数据类型与结构：数据框
+
+在本章中我们将要学习R语言中最为重要，也是最为常用一种数据结构。我们称它为**数据框**。数据框与矩阵类似，它能够批量存储不同类型的类型的数据，并使得我们能够简便地处理它们。与矩阵不同的是，数据框允许我们在不同的列下存储不同类型的数据，而矩阵中存储的所有数据都必须是同样类型的。此外，数据框中的每一行通常代表产生数据的个体，而每一列则通常代表不同个体的同一属性的数据，也就是在计量经济学说所说的变量的数据。因此，数据框要求每一行每一列都有名称。当生成数据框的命令没有指定行与列的名称时，R语言将会自动指定行与列的名称。请大家自己尝试使用以下命令，观察矩阵的构建，提取与修改是如何实现的。
+
+```{r eval=FALSE}
+data1<-data.frame("Name"=c("Arthur","Bob"),
+                  "Gender"=c("Male","Male"),"Age"=c(31,18),
+                  stringsAsFactors=FALSE)
+data2<-data.frame("Name"=c("Arthur","Bob","Cathy"),
+                  "Gender"=c("Male","Male","Female"),
+                  "Age"=c(31,18,24))
+data2
+data2$Name
+data2[1,]
+data2[1,1]
+data2$Name[2]
+data2[,"Name"]
+data2["1",]
+data2[data2$Age>20,]
+data2[,c("Name","Age")]
+data2[1:2,]
+subdata2<-subset(data2,Gender=="Male")
+subdata2
+
+data2[data2$Name=='Bob',]$Age<-20
+data2[2,'Age']<-18
+data3<-rbind(data2,list("Dolores","Female",27))
+data3
+data3<-cbind(data3,Marriage=c('Married','Single',
+                              'Single','Single'))
+data3
+data3$Occupation<-c("Engineer","Student","Clerk","Manager")
+data3$Occupation<-NULL
+data3<-data3[-4,]
+
+head(data3)
+tail(data3)
+str(data3)
+summary(data3)
+```
+
+由于计量经济学中通常使用的数据集较大，因此在处理数据框类型的数据时，应注意尽量避免使用能够直接打开整个数据集的命令，如```` View(dataframe) ````这是因为当我们打开数据浏览页面时，R Studio需要将整个数据集都载入到内存中去。如果计算机内存容量不够，或是存取速度不够快，就会导致剩余可用内存不足，从而导致计算机卡顿或者死机。此时应该尽量选择使用能够查看部分数据集的命令，如```` head(dataframe) ````或是```` tail(dataframe) ````等命令，以便计算机快速运行。
+
+处理完数据集以后，通常需要将新的数据集保存到本地。尽管大家对```` .xls ````或是```` .xlsx ````类型的文件更为熟悉，但是在使用数据软件时，通常建议大家将数据集保存为```` .csv ````格式，以便能够在各种环境下顺利打开数据集。如果使用了日语或是中文等Unicode类编码文字，则需要另外指定编码方式，此处不作展开。除了少数特别情况以外，强烈建议大家坚持使用英语和数字来构成整个数据集，这样才能够保证数据集在不同环境下的可读取性。请大家自己尝试使用以下命令，熟悉数据集的读取与存储命令及其相关选项。
+
+```{r eval=FALSE}
+apartment<-read.csv("apartment.csv",header=TRUE)
+View(apartment)
+head(apartment)
+write.csv(apartment,file="newapartment.csv",row.names=FALSE)
+```
+
+
+# R语言的统计学应用：描述性统计与概率分布
+
+在过去的几章中，我们主要学习了R语言作为编程语言的性质，包括它能够处理的对象与其相应的语法。在随后的章节中，我们将逐渐开始将R语言应用于统计学与计量经济学相关的概念与运算中。当我们获得一个新的数据集时，我们不应该立刻着手进行回归分析，而应该通过常用统计学概念观察数据集的特点，从而试图找出其中蕴含的规律与特征。当我们相信自己较好地理解了数据集的特征以后，我们才应该考虑开始使用计量经济学中学习过的模型。请大家自己尝试使用以下命令，观察常用的统计学概念是如何使用R语言实现的。
+
+```{r eval=FALSE}
+table(data3$Marriage)
+table(data3$Gender,data3$Marriage)
+prop.table(table(data3$Gender,data3$Marriage),margin=1)
+
+barplot(table(data3$Gender,data3$Marriage),
+        horiz=TRUE,las=1,legend=TRUE,
+        args.legend=c(x='bottomright'),
+        main="Marriage by Gender")
+barplot(table(data3$Gender,data3$Marriage),
+        beside=TRUE,las=2,legend=TRUE,args.legend=c(x='top'))
+
+hist(apartment$price,breaks=seq(0,25000,1000))
+#the code below is optional
+#plot(density(apartment$price))
+#plot(ecdf(apartment$price))
+
+mean(apartment$price)
+median(apartment$price)
+var(apartment$price)
+sd(apartment$price)
+cov(apartment$price,apartment$area)
+cor(apartment$price,apartment$area)
+quantile(apartment$price,0.75)
+summary(apartment$price)
+summary(apartment)
+```
+
+使用R语言处理统计问题的最大优点在于，我们可以使用计算机强大的计算功能来帮助我们更加直观地理解各种概率分布的性质和形状。R语言提供了大多数常见的概率分布的生成函数。若能够熟练使用它们，将对今后学习计量经济学中的相关概念产生很大的帮助。以下是与大家较为熟悉的概率分布相对应的一些生成函数的示例。请大家自己尝试使用，加深对它们的理解。
+
+```{r eval=FALSE}
+dbinom(0,1,0.5)
+#dbinom(x,1,p)
+pbinom(1,1,0.5)
+#pbinom(x,1,p)
+qbinom(0.75,1,0.5)
+#qbinom(q,1,p)
+rbinom(10,1,0.5)
+#rbinom(R,1,p)
+#bernoulli distribution
+
+dunif(7,5,10)
+#dunif(x,a,b)
+punif(7,5,10)
+#punif(x,a,b)
+qunif(0.75,5,10)
+#qunif(q,a,b)
+runif(10,5,10)
+#runif(R,a,b)
+#uniform distribution
+
+dlogis(2)
+#dlogis(x)
+plogis(2)
+#plogis(x)
+qlogis(0.75)
+#qlogis(q)
+rlogis(10)
+#rlogis(R)
+#logistic distribution
+
+dnorm(1.96,2,2)
+#dnorm(x,miu,sigma)
+pnorm(1.96,2,2)
+#pnorm(x,miu,sigma)
+qnorm(0.75,2,2)
+#qnorm(q,miu,sigma)
+rnorm(10,2,2)
+#rnorm(R,miu,sigma)
+#normal distribution
+
+dt(1.96,10)
+#dt(x,n)
+pt(1.96,10)
+#pt(x,n)
+qt(0.75,10)
+#qt(q,n)
+rt(10,10)
+#rt(R,n)
+#student's t distribution
+
+dchisq(0.5,5)
+#dchisq(x,n)
+pchisq(0.5,5)
+#pchisq(x,n)
+qchisq(0.75,5)
+#qchisq(q,n)
+rchisq(10,5)
+#rchisq(R,n)
+#chi square distribution
+
+curve(dt(x,10),-5,5)
+#draw student's t distribution pdf
+curve(plogis(x),-5,5)
+#draw logistic distribution cdf
+```
+
+# R语言的统计学应用：蒙特卡洛模拟
+
+在掌握了常用概率分布的相关生成函数以后，我们就可以利用这些生成函数帮助我们理解一些重要概念了。例如，大家在学习计量经济学的时候，时常感到难以理解的一个概念是估计量的一致性：随着样本容量```` n ````趋近于无穷，估计值将会越来越接近真值。在随后的示例中，我们将学习使用之前学习过的各种函数与结构来绘制图像，帮助大家直观地理解这一概念。
+
+```{r eval=FALSE}
+set.seed(1124)
+n<-20
+#set sample size
+repeats<-5000
+#set draw times
+allmean<-numeric(repeats)
+for (i in 1:repeats) {
+        sample<-rnorm(n,5,4)
+        allmean[i]<-mean(sample)
+}
+#draw 50 sample per time and calculate the mean
+#repeat 5000 times
+mean(allmean)
+var(allmean)
+#calculate the mean distribution parameters
+plot(density(allmean),xlim=c(-10,20))
+curve(dnorm(x,5,4),add=TRUE,lty=2)
+#draw curve of the mean distribution
+#compare with the original normal distribution
+```
+
+在以上示例中可以看到，图中虚线部分为样本对应的总体分布。当我们每次从总体分布中随机抽取```` n ````个数据作为一个样本，计算样本均值时，样本均值只是一个值，并不构成一个分布。但当我们重复以上操作五千次时，使用不同的样本计算得到的不同的样本均值就会构成一个经验分布，它是样本均值作为估计量的分布的一个近似。请大家尝试将样本容量```` n ````改为大小不同的数字，观察结果图像发生了什么样的变化。
+
+像上例中这样利用R语言中强大的概率分布生成函数来大量生成模拟的抽样数据，并将我们不熟悉的统计方法应用于这些模拟数据上，观察它的表现的方法称为**蒙特卡洛模拟法**。在今后的学习中我们还将时常使用这样的方法来帮助大家理解复杂的计量经济学概念，请大家务必熟练掌握这一方法。
+
+以下同样是用蒙特卡洛模拟法获得的卡方分布的均值绘制的模拟分布结果图像。请大家尝试理解代码，并尝试修改，观察图像发生了什么样的变化。
+
+```{r eval=FALSE}
+set.seed(1124)
+n<-5000
+#set sample size
+repeats<-5000
+#set draw times
+allmean<-numeric(repeats)
+for (i in 1:repeats) {
+        sample<-rchisq(n,2)
+        allmean[i]<-mean(sample)
+}
+#draw 50 sample per time and calculate the mean
+#repeat 5000 times
+mean(allmean)
+var(allmean)
+#calculate the mean distribution parameters
+plot(density(allmean))
+curve(dnorm(x,2,sqrt(4/n)),add=TRUE,lty=2)
+#draw curve of the mean distribution
+#compare with the original normal distribution
+```
+
+# 线性回归模型：估计方法和估计量的性质
+
+从这一章节开始，我们将正式进入计量经济学回归模型的R语言实现的学习。在学习计量经济学时，我们首先学习的就是线性回归模型。经典假设下的线性回归模型通常形式为$$y_i=\beta_0+\beta_1x_i+\epsilon_i$$，然而，通常情况下我们使用的数据集并不总能够满足经典假设。在R语言的学习中，我们可以利用蒙特卡洛模拟法来模拟一个抽样数据集，使得它能够满足经典假设，从而帮助我们理解经典假设对于线性回归模型的作用，以及线性回归模型在R语言中是如何被实现的。
+
+```{r eval=FALSE}
+set.seed(1124)
+n<-2000
+epsiloni<-rnorm(n,0,200)
+xi<-runif(n,0,200)
+beta0<-20
+beta1<-5
+yi<-beta0+beta1*xi+epsiloni
+#population model
+mts_data<-data.frame("y"=yi,"x"=xi,"error_term"=epsiloni)
+head(mts_data)
+#generate monte carlo simulation data
+estimation_result<-lm(y~x,data=mts_data)
+summary(estimation_result)
+#plot(mts_data$x,mts_data$y)
+#abline(estimation_result)
+library(ggplot2)
+figure1<-ggplot(data=mts_data,aes(x=x,y=y))+
+        geom_point(alpha=0.5,color='navyblue')+
+        geom_smooth(method='lm',formula=y~x,color='tomato')+
+        geom_abline(intercept=20,slope=5,color='orange')
+figure1
+```
+
+除了使用R语言自带的```` lm() ````命令以外，我们也可以使用在计量经济学课上学习过的系数估计值的计算方法来获得系数的估计值，请大家自行尝试。注意：需要计算截距项和斜率项的系数估计值，以及它们各自的标准误。
+
+根据中心极限定理，当线性回归模型的经典假设（不包含误差项服从正态分布）满足时，即使误差项不服从正态分布，只要样本容量足够大，则OLS估计量的分布依然近似服从正态分布。为了直观地观察这一性质，我们将继续使用蒙特卡洛模拟法进行样本的随机抽样，并绘制OLS估计量中斜率项的分布。以下是模拟数据和回归结果图像的代码，请大家理解，并尝试修改，观察图像发生了什么样的变化。
+
+```{r eval=FALSE}
+set.seed(1124)
+beta0<-20
+beta1<-5
+n<-1000
+repeats<-3000
+allb1<-numeric(repeats)
+for (i in 1:repeats) {
+        xi<-runif(n,0,200)
+        epsiloni2<-rchisq(n,2)-2
+        yi<-beta0+beta1*xi+epsiloni2
+        mts_data2<-data.frame("y"=yi,"x"=xi,
+                              "error_term"=epsiloni2)
+        estimation_result2<-coef(lm(y~x,data=mts_data2))
+        allb1[i]<-estimation_result2['x']
+}
+plot(density(allb1))
+curve(dnorm(x,mean=5,sd=sqrt(0.0012/n)),add=TRUE,lty=2)
+```
+
+# 线性回归模型：异方差
+
+在线性回归模型中，最为常见的经典假设不被满足的情况主要分为几种。其中，**异方差问题**是较为常见的一种情况，即：$Var[\epsilon_i|X_i]\neq\sigma^2$。正如在计量经济学课程中学习过的一样，即使线性回归模型的误差项不满足经典假设中的同方差假设，也并不意味着OLS估计量的估计值本身将会产生偏误。实际上，如果我们的目标只是想要计算OLS估计量的数值本身，而不考虑估计量的标准误和其他统计学检验的话，那么我们完全可以无视异方差问题。以下代码使用了与本章中展示单变量线性回归模型时相类似的代码，请大家观察样本对应的总体模型设定的异同，并观察回归结果图像发生了什么变化。
+
+```{r eval=FALSE}
+set.seed(1124)
+n<-2000
+beta0<-20
+beta1<-5
+xi<-runif(n,0,200)
+epsiloni3<-numeric(n)
+for (i in 1:n) {
+        epsiloni3[i]<-rnorm(1,0,50*sqrt(xi[i]))
+}
+yi<-beta0+beta1*xi+epsiloni3
+#population model with heteroscedasticity
+mts_data3<-data.frame("y"=yi,"x"=xi,"error_term"=epsiloni3)
+head(mts_data3)
+estimation_result3<-lm(y~x,data=mts_data3)
+summary(estimation_result3)
+#plot(mts_data3$x,mts_data3$y)
+#abline(estimation_result3)
+library(ggplot2)
+figure3<-ggplot(data=mts_data3,aes(x=x,y=y))+
+        geom_point(alpha=0.5,color='navyblue')+
+        geom_smooth(method='lm',formula=y~x,color='tomato')+
+        geom_abline(intercept=20,slope=5,color='orange')
+figure3
+```
+
+显然地，在通常情况下我们将会需要计算OLS估计量对应的标准误，并使用它进行如$t$检验等统计学检验，从而判断系数估计值的显著性水平。因此，我们需要一种方法来帮助我们判断并处理模型中潜在的异方差问题。以下代码使用了额外的R包```` car ````和```` lmtest ````来完成异方差问题的判断和处理过程。请大家注意在编写命令之前先使用```` install.packages() ````命令安装所需的R包，然后再在自己的计算机上尝试编写和修改代码。
+
+```{r eval=FALSE}
+library(lmtest)
+bptest(estimation_result3)
+#employ Breusch–Pagan test
+coeftest(estimation_result3,vcov=hccm)
+#employ t test using
+#heteroscedasticity-corrected covariance matrix
+library(car)
+linearHypothesis(estimation_result3,c("x"),vcov=hccm)
+#employ F test using
+#heteroscedasticity-corrected covariance matrix
+```
+
+值得注意的是，BP检验的统计量在同方差的原假设下服从```` p-1 ````个自由度的卡方分布，其中```` p ````为任意指定的变量与截距项的个数（也可以为原模型中的说明变量）。
+
+# 工具变量回归模型：使用R包中的命令
+
+在线性回归模型中，经典假设不被满足的另一种主要情况就是**内生性问题**，即：$E[\epsilon_i|X_i]\neq0$。正如我们在计量经济学课程中学习过的一样，内生性问题将会破坏OLS估计量的良好性质，使得它不再是无偏而一致的估计量。此时，原始模型下的估计值将不再具有经济学含义。因此我们需要构建工具变量回归模型来解决这一问题。 
+
+一个性质良好的工具变量必须满足两个条件。第一个条件称为相关性条件，即工具变量必须与内生变量线性相关；第二个条件则称为外生性条件，即工具变量必须与误差项线性无关。以下代码使用了额外的R包```` MASS ````和```` AER ````构建了样本总体的模型，并随机生成线性相关和线性无关的各种变量，然后再使用工具变量回归命令进行了模型的估计。请大家观察代码，并尝试修改，观察结果发生了什么变化。
+
+```{r eval=FALSE}
+library(MASS)
+set.seed(1124)
+mts_data4<-mvrnorm(n=1000,mu=c(100,50,0),
+                   Sigma=cbind(c(225,120,80),
+                               c(120,144,0.1),
+                               c(80,0.1,81)))
+#simulating regressor x, IV z, and error term epsilon
+#with variance-covariance matrix defined in Sigma
+mts_data4<-as.data.frame(mts_data4)
+colnames(mts_data4)<-c('x','z','epsilon4')
+#rename variables
+beta0<-20
+beta1<-5
+y<-beta0+beta1*mts_data4$x+mts_data4$epsilon4
+#population model with endogeneity
+mts_data4<-cbind(y,mts_data4)
+head(mts_data4)
+estimation_result4<-lm(y~x,data=mts_data4)
+#OLS estimation using lm()
+summary(estimation_result4)
+#plot(mts_data4$x,mts_data4$y)
+#abline(estimation_result4)
+library(ggplot2)
+figure4<-ggplot(data=mts_data4,aes(x=x,y=y))+
+        geom_point(alpha=0.5,color='navyblue')+
+        geom_smooth(method='lm',formula=y~x,color='tomato')+
+        geom_abline(intercept=20,slope=5,color='orange')
+figure4
+
+library(AER)
+estimation_result_iv<-ivreg(y~x|z,data=mts_data4)
+#IV estimation using ivreg()
+summary(estimation_result_iv)
+#plot(mts_data4$x,mts_data4$y)
+#abline(estimation_result_iv)
+coefficient_iv<-coef(estimation_result_iv)
+library(ggplot2)
+figure_iv<-ggplot(data=mts_data4,aes(x=x,y=y))+
+        geom_point(alpha=0.5,color='navyblue')+
+        geom_abline(intercept=coefficient_iv['(Intercept)'],
+                    slope=coefficient_iv['x'],color='tomato')+
+        geom_abline(intercept=20,slope=5,color='orange')
+figure_iv
+```
+
+显然，正如我们在计量经济学课程中学习的一样，即使不使用额外的R包，我们也能够使用```` lm() ````命令估计工具变量模型。只要使用二阶段最小二乘法（2SLS），就能够获得与使用```` ivreg() ````命令同样的结果。请大家自行尝试。
+
+同样地，与普通线性模型的OLS估计量一样，IV估计量同样也满足渐进正态性这一性质。请大家参考线性模型章节中练习过的命令，绘制IV估计量的蒙特卡洛模拟分布，确认这一性质。
+
+# 面板数据模型：一阶差分估计与固定效果估计
+
+正如我们在计量经济学课程中学习过的一样，线性模型通常难以避免内生性问题的发生。而当工具变量难以获得时，我们还有其他的方法可以解决一些特定情形下的模型的内生性问题。面板数据模型就是这样的一种方法。
+
+在R语言中，为了简便地处理在面板数据模型所对应的数据集，我们将使用额外的R包```` plm ````生成一种新的数据格式```` pdata.frame ````，我们称之为**面板数据框**。面板数据框与数据框的功能总体上是相似的。区别在于，面板数据框在数据框的基础上赋予了数据集面板的结构。通过指定时序变量与个体身份变量，我们能够使用普通的数据框对象生成面板数据框对象。请大家观察以下代码，并尝试理解其原理。
+
+```{r eval=FALSE}
+library(plm)
+crime<-read.csv("crime.csv",header=TRUE)
+panelcrime<-pdata.frame(crime,index=c('county','year'))
+#define panel data set using county as id and year as time
+pdim(panelcrime)
+#obtain dimensions of the panel data set
+head(panelcrime)
+#panelcrime[1:6,]
+```
+
+在计量经济学课程中我们知道，在面板数据模型的设定中，我们已经获得的数据将不只是某一个时间点的，而是对于同样的群体的多个时间点上的数据集。换句话说，对于个体```` i ````，我们不仅能够观察到他在```` t ````时间点上的各种变量的数据，也能够观察到他在```` (t-1) ````时间点上的各种变量的数据。这样的数据集使得我们能够构建对应的模型，以处理个体不可观测的特征与说明变量构成线性相关导致的内生性问题。常见的面板数据的模型表达式为以下形式：$y_{it}=\beta_0+\beta_1x_{it}+\alpha_i+\epsilon_{it},i=1,\dots,N,t=1,\dots,T$。在模型中，$\alpha_i$称为个体不随时间变化的异质性特征。由于我们无法观测到$\alpha_i$的数据，因此我们无法将它作为控制变量加入到模型中进行回归。此时，若$\alpha_i$与$x_{it}$线性相关，则使用模型$y_{i}=\beta_0+\beta_1x_{i}+\epsilon_{i},i=1,\dots,NT$进行回归获得的估计量$\hat{\beta_1}_{OLS}$将会是不一致的。因此，在本章中，我们将要学习两种常见的处理无法观测的异质性导致的内生性问题的模型在R语言中的实现方法。首先要学习的第一种模型是一阶差分估计。显然，正如我们在计量经济学课程中学习过的那样，一阶差分模型利用同一个体两期数据的差来消除不可观测的个体异质性，从而获得一致的估计量。以下是使用额外的R包```` plm ````中的命令```` plm() ````计算得到的估计结果。请大家观察代码，并尝试不使用```` plm() ````命令，使用```` lm() ````命令计算出同样的结果。
+
+```{r eval=FALSE}
+crime_poolresult<-plm(crmrte~unem,data=panelcrime,
+                      model="pooling")
+summary(crime_poolresult)
+#Pooled Estimator
+#do use lm() to check if the results are same
+crime_fdresult<-plm(crmrte~unem,data=panelcrime,model="fd")
+summary(crime_fdresult)
+#First Difference Estimator
+
+#hint for calculating fd result manually
+#lag(x)
+#x_i,t-1
+#i.e. lag(panelcrime$unem,k=-5)
+#diff(x)
+#x_i,t-x_i,t-1
+#i.e. diff(panelcrime$unem,lag=5)
+```
+
+除了一阶差分模型以外，固定效果模型也能够帮助我们处理无法观测而又随时间不变的异质性导致的内生性问题。与一阶差分不同的是，固定效果模型利用同一个体的所有期数据在时间维度上的均值构造一期新的数据，并将该个体的所有期数据减去新的数据。由于不随时间变化的个体异质性变量对时间的平均将等于它本身，因此个体每一期的数据在通过上述模型变形后将不再包含原有的个体异质性变量。最后，与一阶差分模型一样，固定效果模型的估计量将会是一致的。在使用```` plm() ````命令计算固定效果模型时，只需将```` model ````指定为```` "within" ````，即可计算对应估计量的估计结果了。请大家观察以下代码，比较固定效果模型的估计结果与一阶差分模型的估计结果的异同，并尝试不使用```` plm() ````命令，使用```` lm() ````命令计算固定效果模型估计量的结果。
+
+```{r eval=FALSE}
+crime_feresult<-plm(crmrte~unem,data=panelcrime,model="within")
+summary(crime_feresult)
+#Fixed Effects Estimator
+
+crime_fdresult2<-plm(crmrte~0+unem,data=panelcrime,model="fd")
+summary(crime_fdresult2)
+#First Difference Estimator without intercept
+
+#hint for calculating fe result manually
+#between(x)
+#time average of x_it for each i
+#Between(x)
+#time average of x_it for each i but with length N
+#Within(x)
+#time demeaned x_it: x_it minus time average of x_it
+```
+
+值得注意的是，当我们根据已经获得的面板数据集选择适用的模型时，若数据集是典型的个体数量远大于时间段数量的数据集时（即$N>T$），则应当优先考虑固定效果模型，而不是一阶差分模型。这是由于一阶差分模型在数据集中存在一阶以上自相关等时序相关性的问题时将会产生较为严重的偏误。尽管使用固定效果模型也无法完全避免这一问题，但影响将会比一阶差分模型要更为轻微。针对面板数据的时序相关性将模型进行对应的修正是可能的，但超出了课程的覆盖范围。有兴趣的同学可以参照Wooldridge(2010)自行学习。
+
+# R包：ggplot2与rmarkdown
+
+在之前的章节中，我们主要学习了R语言作为编程语言的特征与使用方法，以及如何使用R语言估计计量经济学课程中学习过的各种不同的模型。尽管我们也时常使用额外的R包中的命令来得到一些计算的结果，我们还未曾系统性地学习过某一个R包中一类函数的使用方法。相对于其他科学计算软件与语言，使用R语言最为强大的优势就在于，R语言可以通过安装并加载由其他用户开发而成的额外的R包获得原生的R函数与数据结构所难以处理的计算方法和数据类型，这一点我们已经在上一章中通过面板数据集的使用获得了直观的认识。不仅如此，在使用R包以后，我们还能够充分发挥R语言作为一种灵活的编程语言的优势，将计量经济学模型的计算结果以更容易被他人理解，或是更为直观的方式展现出来。这里我们将主要介绍```` ggplot2 ````与```` rmarkdown ````这两个R包。
+
+```` ggplot2 ````主要由Hadley Wickham编写与维护，用于为R语言提供种类丰富，逻辑简洁的数据可视化方法。由于编写时的程序逻辑依据Leland Wilkinson的著作Grammar of Graphics - a general scheme for data visualization构建，因此Wickham将包的名称命名为```` ggplot2 ````。```` ggplot2 ````的基本绘图元素由图层构成，在绘制出图像框架以后，每一个图像的元素由图层函数实现，然后层层添加到整个图像中去。图层与图层间用```` + ````加以分隔。用于绘制```` ggplot2 ````对象的函数主要分为两类，一种为```` geom_*() ````函数，用于绘制几何学对象，如点（散点图），线（折线图），面（饼图）等等。另一种则为```` stat_*() ````函数，用于绘制经统计学变换而得到的对象，如经验概率密度分布，线性回归拟合线等等。
+
+为了更好地理解```` ggplot2 ````的绘图逻辑，我们使用之前曾经用过的```` apartment.csv ````数据集，给出部分绘图函数的例子。请大家观察以下代码并理解其中逻辑，并使用我们曾经用过的其他数据集，尝试绘制出类似的图像。
+
+```{r eval=FALSE}
+library(ggplot2)
+apartmentfigure1<-ggplot()+
+        geom_point(data=apartment,aes(y=price,x=area),
+                   color='navyblue')+
+        stat_smooth(data=apartment,aes(y=price,x=area),
+                    method='lm',
+                    formula=y~x,se=TRUE,level=0.95,
+                    color='tomato')
+apartmentfigure1
+
+apartmentfigure2<-ggplot()+
+        stat_density(data=apartment,
+                     aes(y=..density..,x=price),
+                     geom='line')+
+        geom_histogram(data=apartment,
+                       aes(y=..density..,x=price),
+                       binwidth=1800,alpha=0.5)
+apartmentfigure2
+```
+
+```` rmarkdown ````主要由R Studio公司团队编写，Yihui Xie负责维护，用于为以R Studio为首的R语言集成开发环境提供支持多种文档格式的富文本文档编辑方式。由于```` rmarkdown ````支持在文档内部直接编写R语言代码，并可以使用```` Markdown ````语言的语法来构成文档的格式编辑部分，因此得名```` rmarkdown ````。在安装了```` rmarkdown ````包后，R Studio的菜单栏中的```` New File ````按钮下将会出现```` R Markdown ````文件格式，点击后即可开始编写后缀名```` .rmd ````格式的文件。对于计量经济学课程的学习者来说，常用的```` rmarkdown ````功能可能有以下几种：
+
+1. R代码块
+
+R代码块需要由```` ```{r} ````和```` ``` ````包括。在代码块中，我们可以像在```` R Script ````中一样编写，修改和运行代码。编写完成的R代码块将会与运行结果一起输出到结果文档中去。
+
+2. LaTeX代码
+
+```` rmarkdown ````中同样可以编写LaTeX代码，用```` $ ````或是```` $$ ````包括。为了在文档中书写符合文献规范的论文，通常来说必须使用LaTeX代码。LaTeX代码的学习内容不包含在本讲义中，请有兴趣的同学自行使用搜索引擎搜索相关资料学习。
+
+3. 输出文档结果
+
+使用```` rmarkdown ````中包含的```` knitr() ````函数，即可输出PDF，HTML等富文本格式的文档结果。需要注意的是，如果在```` rmarkdown ````文件中使用了写LaTeX代码，则还需要另外安装MiKTeX或是MacTeX等LaTeX库管理器，才能正常调用LaTeX库并输出想要的结果。此外，普通的```` rmarkdown ````并不支持英语以外的亚洲语言，因此在编写```` rmarkdown ````文档时，需要注意不应当使用英语以外的语言。如果必须使用，则应该像本讲义一样，进行额外的设置。
+
+
+# 课后练习
+
+1. 不使用```` lm() ````命令，计算线性回归模型章节中代码例中的斜率项与截距项的估计值与标准误，并确认结果与```` lm() ````得到的结果相同；
+2. 阅读论文Card(1995)```` Using Geographic Variation in College Proximity to Estimate the Return to Schooling ````,并使用数据文件```` card_data.csv ````，再现原论文的估计结果；
